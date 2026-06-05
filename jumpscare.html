@@ -1,0 +1,294 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚠️ Jumpscare Demo (personal use)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0f1e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            transition: all 0.1s ease;
+        }
+
+        /* normal screen */
+        .container {
+            background: #1e2a3a;
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 35px -10px black;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        h1 {
+            color: #ffaa66;
+            margin-bottom: 1rem;
+        }
+
+        .warning {
+            background: #2a1a1a;
+            border-left: 5px solid red;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #ffaaaa;
+        }
+
+        button {
+            background: #44aa66;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.1s linear;
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        /* jumpscare overlay (hidden initially) */
+        .jumpscare-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.05s linear;
+        }
+
+        .jumpscare-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .scary-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: brightness(1.2) contrast(1.3);
+            animation: shake 0.15s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-8px, 5px); }
+            50% { transform: translate(8px, -3px); }
+            75% { transform: translate(-4px, -5px); }
+            100% { transform: translate(4px, 3px); }
+        }
+
+        .instruction {
+            margin-top: 1rem;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        .countdown {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffaa66;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainUI">
+    <h1>⚡ PSYCHOLOGICAL TEST ⚡</h1>
+    <div class="warning">
+        <strong>⚠️ WARNING – JUMPSCARES AHEAD ⚠️</strong><br>
+        • Contains sudden loud scream (volume up to 100%)<br>
+        • Flashing / disturbing image (classic horror face)<br>
+        • Do NOT use if you have epilepsy, heart condition, or anxiety disorder.<br>
+        • <strong>Personal use only.</strong> Do not force this on anyone.
+    </div>
+    <p>Press the button below. After a short random delay (2–5 sec), a jumpscare will appear.<br>
+    <strong>Close the tab or refresh to stop.</strong></p>
+    <button id="startBtn">😨 START JUMPScare 😨</button>
+    <div class="countdown" id="countdownText"></div>
+    <div class="instruction">Click anywhere on the page after starting to ensure audio works.</div>
+</div>
+
+<div id="jumpscareOverlay" class="jumpscare-overlay">
+    <img id="scaryImg" class="scary-image" alt="scary" src="">
+</div>
+
+<script>
+    (function() {
+        // ---------- CONFIGURATION ----------
+        // Use a reliable, creepy image (free, no copyright issues)
+        // Option 1: classic screaming face (public domain or fair use for demo)
+        // I'll use a well-known horror PNG from a free CDN (placeholder.com not suitable)
+        // Alternative: embedded base64 of a simple scary drawing? But better use external reliable image.
+        // I choose a free-to-use scary face from GitHub's ghost? No, I'll use an emoji-based SVG fallback + real image.
+        // For maximum jumpscare, I use a high-res creepy image (hosted on fast Cloudflare).
+        // The following image is a classic "Scream" painting parody? No, let's use a safe but scary PNG:
+        const SCARY_IMAGE_URL = "https://media.tenor.com/NE6l4XkO2qYAAAAi/scary-horror.gif";
+        // (tenor GIF - scary rotating face, safe for demo)
+        // Alternative fallback: if network fails, create canvas with red text.
+        
+        // Audio - loud scream (short, public domain scream sound effect)
+        // Using freesound? Better use a simple Web Audio generated scream? Not effective.
+        // I'll use a base64 encoded WAV of a short scream? That would be huge. Use external sound effect from reliable CDN.
+        // I'll use a royalty-free scream sound from my personal server? Not possible. Instead use "howler" or simple Audio object with URL.
+        // I'll embed a tiny dataURI? Not possible. So I use a known free scream sound from GitHub or freesound.
+        // But to ensure it works offline? The user will need internet.
+        const SCREAM_SOUND_URL = "https://www.myinstants.com/media/sounds/scream-1.mp3";
+        // ^ that's a classic short scream. Myinstants allows embedding.
+        
+        // Fallback: if sound fails, just visual.
+        
+        let active = false;
+        let timeoutId = null;
+        let audioElement = null;
+        
+        const startBtn = document.getElementById('startBtn');
+        const mainUI = document.getElementById('mainUI');
+        const overlay = document.getElementById('jumpscareOverlay');
+        const scaryImg = document.getElementById('scaryImg');
+        const countdownDiv = document.getElementById('countdownText');
+        
+        // Preload image and sound
+        function preloadAssets() {
+            const img = new Image();
+            img.src = SCARY_IMAGE_URL;
+            audioElement = new Audio(SCREAM_SOUND_URL);
+            audioElement.preload = "auto";
+            // Also try to load to unlock later
+            audioElement.load();
+        }
+        preloadAssets();
+        
+        // Function to trigger jumpscare
+        function triggerJumpscare() {
+            if (!active) return;
+            
+            // Set scary image
+            scaryImg.src = SCARY_IMAGE_URL;
+            // Show overlay instantly
+            overlay.classList.add('active');
+            
+            // Play scream as loud as possible
+            if (audioElement) {
+                audioElement.currentTime = 0;
+                audioElement.volume = 1.0;
+                audioElement.play().catch(e => console.log("Audio play blocked:", e));
+            }
+            
+            // Optional: screen shake on body
+            document.body.style.animation = "shake 0.1s infinite";
+            setTimeout(() => {
+                document.body.style.animation = "";
+            }, 800);
+            
+            // Auto-close jumpscare after 2 seconds? But user might want to close tab.
+            // I'll add a click-to-dismiss: click anywhere on overlay to remove and reset
+            overlay.onclick = function() {
+                resetJumpscare();
+            };
+            
+            // Also auto-reset after 3 seconds
+            setTimeout(() => {
+                if (overlay.classList.contains('active')) {
+                    resetJumpscare();
+                }
+            }, 3000);
+        }
+        
+        function resetJumpscare() {
+            overlay.classList.remove('active');
+            // do not restart active flag, just hide
+            // but if the user wants to start again, they need to press start
+        }
+        
+        function startJumpscareTimer() {
+            if (active) return;
+            active = true;
+            countdownDiv.innerText = "🔮 Waiting for the scare... (2-5 sec)";
+            // Random delay between 2000ms and 5000ms
+            const delay = Math.floor(Math.random() * 3000) + 2000;
+            timeoutId = setTimeout(() => {
+                if (active) {
+                    triggerJumpscare();
+                    countdownDiv.innerText = "💀 BOO! 💀";
+                    // After scare, reset active flag but allow restart
+                    active = false;
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                    // reset button text
+                    startBtn.innerText = "😱 TRY AGAIN?";
+                }
+            }, delay);
+            
+            // Also play a subtle tension sound? Not needed.
+        }
+        
+        function stopAndReset() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            active = false;
+            overlay.classList.remove('active');
+            countdownDiv.innerText = "";
+            startBtn.innerText = "😨 START JUMPScare 😨";
+            // stop any playing audio
+            if (audioElement) {
+                audioElement.pause();
+                audioElement.currentTime = 0;
+            }
+        }
+        
+        startBtn.addEventListener('click', () => {
+            // Stop any previous session
+            stopAndReset();
+            // Small delay to let UI settle
+            setTimeout(() => {
+                startJumpscareTimer();
+            }, 50);
+        });
+        
+        // Also let user click anywhere to pre-unlock audio (browsers require user interaction)
+        document.body.addEventListener('click', function initAudio() {
+            if (audioElement && audioElement.paused) {
+                // create silent play to unlock
+                let silence = new Audio();
+                silence.play().then(() => {}).catch(e=>{});
+            }
+        }, { once: true });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (audioElement) audioElement.pause();
+        });
+    })();
+</script>
+</body>
+</html>
