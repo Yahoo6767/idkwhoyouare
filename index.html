@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚡ Device Stress Test (Personal Use Only)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', monospace;
+            background: #0a0f1e;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background: #1e2a3a;
+            border-radius: 24px;
+            padding: 20px;
+            max-width: 500px;
+            margin: 40px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        button {
+            background: #ff4d4d;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 14px 28px;
+            border-radius: 60px;
+            margin: 10px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        button:active {
+            transform: scale(0.96);
+        }
+        .stop-btn {
+            background: #2c7da0;
+        }
+        .warning {
+            background: #3a2a1f;
+            border-left: 5px solid #ffaa33;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.85rem;
+            margin: 20px 0;
+            border-radius: 12px;
+        }
+        .status {
+            background: #0f1722;
+            padding: 12px;
+            border-radius: 16px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            word-break: break-word;
+        }
+        a {
+            color: #ffaa66;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        hr {
+            border-color: #2a3a4a;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>⚠️ DEVICE STRESS TEST</h2>
+    <div class="warning">
+        <strong>🔴 Personal test only.</strong> This will cause severe lag, overheating, and potential app crashes on phones.<br>
+        Use the <strong style="color:#88ff88;">STOP ALL</strong> button to recover. Close browser tab if needed.
+    </div>
+    
+    <button id="startBtn">🔥 START LAG (CPU + RAM)</button>
+    <button id="stopBtn" class="stop-btn">⏹️ STOP ALL</button>
+    
+    <div class="status" id="statusMsg">
+        Ready. Click "START LAG" to begin.
+    </div>
+    <hr>
+    <p>🔗 <strong>Simulated malicious link:</strong> <a href="#" id="fakeLink">Click this link to trigger lag</a> (same as Start button).</p>
+    <p><small>Phone will become almost unusable within 2-3 seconds. Stop button terminates all workers and clears memory.</small></p>
+</div>
+
+<script>
+    (function() {
+        // ---------- CONFIGURATION ----------
+        // Use all CPU cores (but limit to max 6 on phones to avoid total freeze)
+        let coreCount = navigator.hardwareConcurrency || 4;
+        coreCount = Math.min(coreCount, 6);  // safe upper bound for phones
+        const WORKER_COUNT = coreCount;
+        
+        let activeWorkers = [];
+        let memoryChunks = [];     // hold large arrays to eat RAM
+        let memoryInterval = null;
+        let workerBlobUrl = null;
+        
+        // ---------- HEAVY WORKER CODE ----------
+        // Each worker runs an infinite loop with prime search + floating point ops
+        const workerCode = `
+            // Busy loop that never yields (saturates core)
+            function heavyComputation() {
+                let x = 1.23456789;
+                let counter = 0;
+                // Mix integer math and float ops to prevent optimization
+                while (true) {
+                    // Prime sieve-like operation
+                    let n = 1000000000 + (counter % 100000);
+                    let isPrime = true;
+                    let limit = Math.sqrt(n) | 0;
+                    for (let i = 2; i <= limit; i++) {
+                        if (n % i === 0) {
+                            isPrime = false;
+                            break;
+                        }
+                    }
+                    // Floating point noise
+                    x = Math.sin(x) * Math.cos(x) + Math.tan(x) * 0.999999;
+                    counter++;
+                    if (counter > 1000000) counter = 0;
+                }
+            }
+            heavyComputation();
+        `;
+        
+        // ---------- FUNCTIONS ----------
+        function startLag() {
+            if (activeWorkers.length > 0) {
+                updateStatus("⚠️ Already lagging! Stop first.", "#ffaa66");
+                return;
+            }
+            
+            updateStatus("🚀 Spawning " + WORKER_COUNT + " workers & eating RAM...", "#ffaa66");
+            
+            // 1. Spawn Web Workers for CPU overload
+            try {
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                workerBlobUrl = URL.createObjectURL(blob);
+                for (let i = 0; i < WORKER_COUNT; i++) {
+                    const w = new Worker(workerBlobUrl);
+                    activeWorkers.push(w);
+                }
+            } catch(e) {
+                updateStatus("Worker error: " + e.message, "#ff6666");
+                return;
+            }
+            
+            // 2. Memory hog: allocate and hold large arrays every 300ms
+            // This creates constant GC pressure and swap thrash on phones.
+            memoryChunks = []; // clear any previous
+            memoryInterval = setInterval(() => {
+                try {
+                    // Allocate ~10MB each time (10 million 8-byte numbers = 80MB but JS is approximate)
+                    // Actually Uint8Array is 1 byte per element – 10 million = 10 MB.
+                    const megaBytes = 12;
+                    const size = megaBytes * 1024 * 1024; // 12 million bytes
+                    const bigArray = new Uint8Array(size);
+                    // Fill with random-ish data to prevent copy-on-write optimization
+                    for (let i = 0; i < size; i += 4096) {
+                        bigArray[i] = i & 0xFF;
+                    }
+                    memoryChunks.push(bigArray);
+                    
+                    // Keep total memory under ~800MB max (to avoid browser OOM kill, but still cause thrash)
+                    if (memoryChunks.length > 70) {  // 70 * 12MB = 840MB
+                        // remove oldest chunk, but keep pressure high
+                        memoryChunks.shift();
+                    }
+                    updateStatus(`💾 Memory pressure: ${memoryChunks.length} chunks active (~${(memoryChunks.length * 12).toFixed(0)} MB)`, "#ffaa66");
+                } catch (err) {
+                    // OOM or allocation fail – that's even better for lag
+                    updateStatus("⚠️ Memory allocation slowing down... device struggling.", "#ff8888");
+                }
+            }, 200);
+            
+            updateStatus(`🔥 ACTIVE: ${WORKER_COUNT} CPU workers + RAM filler running. Device should lag severely.`, "#ff8888");
+        }
+        
+        function stopLag() {
+            // Terminate all web workers
+            for (let w of activeWorkers) {
+                w.terminate();
+            }
+            activeWorkers = [];
+            if (workerBlobUrl) {
+                URL.revokeObjectURL(workerBlobUrl);
+                workerBlobUrl = null;
+            }
+            
+            // Stop memory filler and release all large arrays
+            if (memoryInterval) {
+                clearInterval(memoryInterval);
+                memoryInterval = null;
+            }
+            memoryChunks = [];   // free memory for GC
+            // Force a bit of cleanup hint (not guaranteed but helps)
+            if (window.gc) window.gc();  // only in some environments
+            
+            updateStatus("✅ All workers terminated. Memory cleared. Device should recover shortly.", "#88ff88");
+        }
+        
+        function updateStatus(msg, color) {
+            const div = document.getElementById('statusMsg');
+            div.innerHTML = msg;
+            div.style.color = color || "#e0e0e0";
+        }
+        
+        // ---------- EVENT HANDLERS ----------
+        document.getElementById('startBtn').addEventListener('click', startLag);
+        document.getElementById('stopBtn').addEventListener('click', stopLag);
+        document.getElementById('fakeLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            startLag();
+        });
+        
+        // Cleanup on page unload (good practice)
+        window.addEventListener('beforeunload', () => {
+            for (let w of activeWorkers) w.terminate();
+            if (memoryInterval) clearInterval(memoryInterval);
+            memoryChunks = null;
+        });
+        
+        // Also try to detect page visibility? Not needed.
+    })();
+</script>
+</body>
+</html>
