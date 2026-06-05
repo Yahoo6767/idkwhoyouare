@@ -1,227 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>⚠️ STRESS TEST – AGGRESSIVE MODE</title>
-    <style>
-        body {
-            background: black;
-            color: red;
-            font-family: monospace;
-            text-align: center;
-            padding: 20px;
-        }
-        button {
-            font-size: 1.5rem;
-            padding: 15px 30px;
-            margin: 10px;
-            border-radius: 50px;
-            border: none;
-            font-weight: bold;
-        }
-        .start {
-            background: #ff3300;
-            color: white;
-        }
-        .stop {
-            background: #00aa44;
-            color: white;
-        }
-        .status {
-            background: #111;
-            padding: 15px;
-            margin-top: 30px;
-            border-radius: 12px;
-            word-break: break-word;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Redirect to GPU Benchmark</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0b1120 0%, #111827 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, 'Segoe UI', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: rgba(18, 25, 45, 0.75);
+      backdrop-filter: blur(12px);
+      border-radius: 3rem;
+      padding: 2rem 2rem 2.5rem;
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(66, 153, 225, 0.2);
+      text-align: center;
+      max-width: 580px;
+      width: 100%;
+      transition: transform 0.2s ease;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #E0E7FF, #A5B4FC);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #1e293b;
+      padding: 0.3rem 0.9rem;
+      border-radius: 60px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 1.2rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .description {
+      color: #cbd5e6;
+      line-height: 1.5;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      padding: 0 0.75rem;
+    }
+
+    /* ----- main button style (large, clear call-to-action) ----- */
+    .benchmark-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      background: #3b82f6;
+      color: white;
+      font-weight: 700;
+      font-size: 1.35rem;
+      padding: 1rem 2rem;
+      border-radius: 80px;
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      box-shadow: 0 8px 20px -6px #1e40af50;
+      border: 1px solid #60a5fa40;
+      width: 100%;
+      max-width: 320px;
+      margin: 0.5rem auto;
+    }
+
+    .benchmark-link:hover {
+      background: #2563eb;
+      transform: scale(1.02);
+      box-shadow: 0 15px 28px -10px #1e3a8a;
+      border-color: #93c5fd;
+    }
+
+    .benchmark-link:active {
+      transform: scale(0.98);
+      background: #1d4ed8;
+    }
+
+    .arrow-icon {
+      font-size: 1.5rem;
+      transition: transform 0.2s;
+    }
+
+    .benchmark-link:hover .arrow-icon {
+      transform: translateX(5px);
+    }
+
+    .footnote {
+      font-size: 0.75rem;
+      color: #5b6e8c;
+      margin-top: 2rem;
+      border-top: 1px solid #1e2a44;
+      padding-top: 1.2rem;
+    }
+
+    .footnote a {
+      color: #7c8db0;
+      text-decoration: none;
+    }
+
+    .footnote a:hover {
+      color: #b9c7e6;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .benchmark-link {
+        font-size: 1.1rem;
+        padding: 0.85rem 1.6rem;
+      }
+    }
+  </style>
 </head>
 <body>
-<h1>🔥 EXTREME DEVICE LAG TEST</h1>
-<p><strong>Personal use only.</strong> Your phone will become unusable within 2 seconds.<br>If “Stop” fails, close the browser tab immediately.</p>
+<div class="card">
+  <div class="badge">⚡ WebGL GPU test · no install</div>
+  <h1>Phone Test</h1>
+  <div class="description">
+    Measure real-time 3D rendering performance, FPS stability, and GPU stress — directly in your browser.
+  </div>
 
-<button id="start" class="start">🚀 START LAG</button>
-<button id="stop" class="stop">⏹️ STOP (may be delayed)</button>
+  <!-- 🔗 CLICKABLE BUTTON THAT LEADS TO volumeshaderbm.com -->
+  <a href="https://volumeshaderbm.com/" 
+     class="benchmark-link" 
+     target="_blank" 
+     rel="noopener noreferrer">
+    <span>🚀 Launch benchmark</span>
+    <span class="arrow-icon">→</span>
+  </a>
 
-<div class="status" id="status">Ready. Click START.</div>
-
-<script>
-    (function() {
-        let running = false;
-        let mainLoopId = null;
-        let storageInterval = null;
-        let domInterval = null;
-        let audioCtx = null;
-        let audioInterval = null;
-
-        // ---- 1. Main thread infinite loop (blocks everything) ----
-        function blockMainThread() {
-            // This runs forever, saturating the UI thread.
-            // Even with setTimeout, we keep it busy.
-            let a = 1.23456789;
-            while (running) {
-                // Heavy floating point + integer ops
-                for (let i = 0; i < 10000; i++) {
-                    a = Math.sin(a) * Math.cos(a) + Math.tan(a) + Math.sqrt(i);
-                    a = a * 1.000001;
-                }
-                // Force DOM access to ensure no optimization
-                document.title = a.toFixed(5);
-                // Micro-yield: but we loop again instantly
-            }
-        }
-
-        // ---- 2. Storage spam (synchronous I/O, fills storage) ----
-        function fillStorage() {
-            if (!running) return;
-            try {
-                let big = "X".repeat(1024 * 100); // 100KB string
-                for (let i = 0; i < 100; i++) {
-                    localStorage.setItem("spam_" + Date.now() + "_" + i, big);
-                }
-                // Also sessionStorage
-                for (let i = 0; i < 100; i++) {
-                    sessionStorage.setItem("spam_" + Date.now() + "_" + i, big);
-                }
-                // Clear old items slowly to avoid quota error but keep I/O busy
-                if (localStorage.length > 200) {
-                    let keys = Object.keys(localStorage);
-                    for (let i = 0; i < 50; i++) {
-                        localStorage.removeItem(keys[i]);
-                    }
-                }
-            } catch(e) { /* quota exceeded - fine, still causes lag */ }
-            if (running) setTimeout(fillStorage, 1);
-        }
-
-        // ---- 3. DOM thrash (continuous reflow/layout) ----
-        function thrashDOM() {
-            if (!running) return;
-            let div = document.createElement('div');
-            div.style.position = 'absolute';
-            div.style.left = Math.random() * 100 + 'px';
-            div.style.top = Math.random() * 100 + 'px';
-            div.style.width = '10px';
-            div.style.height = '10px';
-            div.style.backgroundColor = 'red';
-            document.body.appendChild(div);
-            // Force reflow
-            let x = div.offsetLeft;
-            // Remove after a while to avoid memory explosion, but keep busy
-            if (document.body.children.length > 500) {
-                document.body.removeChild(document.body.children[0]);
-            }
-            if (running) setTimeout(thrashDOM, 0);
-        }
-
-        // ---- 4. AudioContext noise (if supported) – causes system audio thread load ----
-        function startAudioNoise() {
-            if (!audioCtx) {
-                try {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    let gain = audioCtx.createGain();
-                    gain.gain.value = 0.1; // low volume but still heavy processing
-                    gain.connect(audioCtx.destination);
-                    
-                    let bufferSize = 4096;
-                    let noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
-                    noiseNode.onaudioprocess = function(e) {
-                        if (!running) return;
-                        let output = e.outputBuffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) {
-                            output[i] = Math.random() * 2 - 1;
-                        }
-                    };
-                    noiseNode.connect(gain);
-                    noiseNode.connect(audioCtx.destination);
-                    audioCtx.resume();
-                } catch(e) { console.log("Audio not supported"); }
-            }
-        }
-
-        // ---- 5. Additional Web Workers (fallback, but main thread loop is enough) ----
-        let workers = [];
-        function spawnWorkers() {
-            let workerCode = `
-                let x = 1;
-                while(true) {
-                    for(let i=0;i<1000000;i++) {
-                        x = Math.sin(x)*Math.cos(x);
-                    }
-                }
-            `;
-            let blob = new Blob([workerCode], {type: 'application/javascript'});
-            let url = URL.createObjectURL(blob);
-            let coreCount = navigator.hardwareConcurrency || 4;
-            for(let i=0;i<coreCount;i++) {
-                let w = new Worker(url);
-                workers.push(w);
-            }
-            URL.revokeObjectURL(url);
-        }
-
-        // ---- Main start ----
-        function startLag() {
-            if (running) return;
-            running = true;
-            document.getElementById('status').innerHTML = "🔥 LAG ACTIVE – Device should freeze now. Tap STOP if possible.";
-            
-            // Block main thread (THIS WILL MAKE THE TAB UNRESPONSIVE)
-            setTimeout(() => {
-                blockMainThread();
-            }, 10);
-            
-            // Storage spam (async but synchronous inside)
-            fillStorage();
-            
-            // DOM thrash
-            thrashDOM();
-            
-            // Audio noise (if enabled)
-            startAudioNoise();
-            
-            // Spawn extra workers
-            spawnWorkers();
-            
-            // Also try to flood console/logs (minor)
-            setInterval(() => {
-                if(running) console.log("lag");
-            }, 0);
-        }
-        
-        function stopLag() {
-            running = false;
-            // Kill workers
-            for(let w of workers) {
-                w.terminate();
-            }
-            workers = [];
-            // Clear intervals
-            if (storageInterval) clearInterval(storageInterval);
-            if (domInterval) clearInterval(domInterval);
-            if (audioInterval) clearInterval(audioInterval);
-            // Clear localStorage spam (optional)
-            try {
-                let keys = Object.keys(localStorage);
-                for(let k of keys) {
-                    if(k.startsWith("spam_")) localStorage.removeItem(k);
-                }
-                let sKeys = Object.keys(sessionStorage);
-                for(let k of sKeys) {
-                    if(k.startsWith("spam_")) sessionStorage.removeItem(k);
-                }
-            } catch(e) {}
-            document.getElementById('status').innerHTML = "✅ Stopped. Close tab if still lagging.";
-            // Hard reload hint
-            setTimeout(() => {
-                if(confirm("Lag stopped. Reload page to fully reset?")) location.reload();
-            }, 100);
-        }
-        
-        document.getElementById('start').addEventListener('click', startLag);
-        document.getElementById('stop').addEventListener('click', stopLag);
-    })();
-</script>
+  <div class="footnote">
+    ⚠️ Opens in a new tab — the benchmark will start as soon as you click <strong>"Run Test"</strong> on the target page.<br>
+    ✅ <strong>Only use on devices you own or have permission to test.</strong> This is a legitimate GPU performance tool.
+  </div>
+</div>
 </body>
 </html>
