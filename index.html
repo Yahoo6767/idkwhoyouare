@@ -3,230 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>⚡ Device Stress Test (Personal Use Only)</title>
+    <title>⚠️ STRESS TEST – AGGRESSIVE MODE</title>
     <style>
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', monospace;
-            background: #0a0f1e;
-            color: #e0e0e0;
-            margin: 0;
-            padding: 20px;
+            background: black;
+            color: red;
+            font-family: monospace;
             text-align: center;
-        }
-        .card {
-            background: #1e2a3a;
-            border-radius: 24px;
             padding: 20px;
-            max-width: 500px;
-            margin: 40px auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         button {
-            background: #ff4d4d;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            padding: 14px 28px;
-            border-radius: 60px;
+            font-size: 1.5rem;
+            padding: 15px 30px;
             margin: 10px;
-            cursor: pointer;
-            transition: 0.1s linear;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
         }
-        button:active {
-            transform: scale(0.96);
+        .start {
+            background: #ff3300;
+            color: white;
         }
-        .stop-btn {
-            background: #2c7da0;
-        }
-        .warning {
-            background: #3a2a1f;
-            border-left: 5px solid #ffaa33;
-            padding: 12px;
-            text-align: left;
-            font-size: 0.85rem;
-            margin: 20px 0;
-            border-radius: 12px;
+        .stop {
+            background: #00aa44;
+            color: white;
         }
         .status {
-            background: #0f1722;
-            padding: 12px;
-            border-radius: 16px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            margin-top: 20px;
+            background: #111;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 12px;
             word-break: break-word;
-        }
-        a {
-            color: #ffaa66;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        hr {
-            border-color: #2a3a4a;
-            margin: 20px 0;
         }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2>⚠️ DEVICE STRESS TEST</h2>
-    <div class="warning">
-        <strong>🔴 Personal test only.</strong> This will cause severe lag, overheating, and potential app crashes on phones.<br>
-        Use the <strong style="color:#88ff88;">STOP ALL</strong> button to recover. Close browser tab if needed.
-    </div>
-    
-    <button id="startBtn">🔥 START LAG (CPU + RAM)</button>
-    <button id="stopBtn" class="stop-btn">⏹️ STOP ALL</button>
-    
-    <div class="status" id="statusMsg">
-        Ready. Click "START LAG" to begin.
-    </div>
-    <hr>
-    <p>🔗 <strong>Simulated malicious link:</strong> <a href="#" id="fakeLink">Click this link to trigger lag</a> (same as Start button).</p>
-    <p><small>Phone will become almost unusable within 2-3 seconds. Stop button terminates all workers and clears memory.</small></p>
-</div>
+<h1>🔥 EXTREME DEVICE LAG TEST</h1>
+<p><strong>Personal use only.</strong> Your phone will become unusable within 2 seconds.<br>If “Stop” fails, close the browser tab immediately.</p>
+
+<button id="start" class="start">🚀 START LAG</button>
+<button id="stop" class="stop">⏹️ STOP (may be delayed)</button>
+
+<div class="status" id="status">Ready. Click START.</div>
 
 <script>
     (function() {
-        // ---------- CONFIGURATION ----------
-        // Use all CPU cores (but limit to max 6 on phones to avoid total freeze)
-        let coreCount = navigator.hardwareConcurrency || 4;
-        coreCount = Math.min(coreCount, 6);  // safe upper bound for phones
-        const WORKER_COUNT = coreCount;
-        
-        let activeWorkers = [];
-        let memoryChunks = [];     // hold large arrays to eat RAM
-        let memoryInterval = null;
-        let workerBlobUrl = null;
-        
-        // ---------- HEAVY WORKER CODE ----------
-        // Each worker runs an infinite loop with prime search + floating point ops
-        const workerCode = `
-            // Busy loop that never yields (saturates core)
-            function heavyComputation() {
-                let x = 1.23456789;
-                let counter = 0;
-                // Mix integer math and float ops to prevent optimization
-                while (true) {
-                    // Prime sieve-like operation
-                    let n = 1000000000 + (counter % 100000);
-                    let isPrime = true;
-                    let limit = Math.sqrt(n) | 0;
-                    for (let i = 2; i <= limit; i++) {
-                        if (n % i === 0) {
-                            isPrime = false;
-                            break;
-                        }
-                    }
-                    // Floating point noise
-                    x = Math.sin(x) * Math.cos(x) + Math.tan(x) * 0.999999;
-                    counter++;
-                    if (counter > 1000000) counter = 0;
+        let running = false;
+        let mainLoopId = null;
+        let storageInterval = null;
+        let domInterval = null;
+        let audioCtx = null;
+        let audioInterval = null;
+
+        // ---- 1. Main thread infinite loop (blocks everything) ----
+        function blockMainThread() {
+            // This runs forever, saturating the UI thread.
+            // Even with setTimeout, we keep it busy.
+            let a = 1.23456789;
+            while (running) {
+                // Heavy floating point + integer ops
+                for (let i = 0; i < 10000; i++) {
+                    a = Math.sin(a) * Math.cos(a) + Math.tan(a) + Math.sqrt(i);
+                    a = a * 1.000001;
                 }
+                // Force DOM access to ensure no optimization
+                document.title = a.toFixed(5);
+                // Micro-yield: but we loop again instantly
             }
-            heavyComputation();
-        `;
-        
-        // ---------- FUNCTIONS ----------
-        function startLag() {
-            if (activeWorkers.length > 0) {
-                updateStatus("⚠️ Already lagging! Stop first.", "#ffaa66");
-                return;
-            }
-            
-            updateStatus("🚀 Spawning " + WORKER_COUNT + " workers & eating RAM...", "#ffaa66");
-            
-            // 1. Spawn Web Workers for CPU overload
+        }
+
+        // ---- 2. Storage spam (synchronous I/O, fills storage) ----
+        function fillStorage() {
+            if (!running) return;
             try {
-                const blob = new Blob([workerCode], { type: 'application/javascript' });
-                workerBlobUrl = URL.createObjectURL(blob);
-                for (let i = 0; i < WORKER_COUNT; i++) {
-                    const w = new Worker(workerBlobUrl);
-                    activeWorkers.push(w);
+                let big = "X".repeat(1024 * 100); // 100KB string
+                for (let i = 0; i < 100; i++) {
+                    localStorage.setItem("spam_" + Date.now() + "_" + i, big);
                 }
-            } catch(e) {
-                updateStatus("Worker error: " + e.message, "#ff6666");
-                return;
+                // Also sessionStorage
+                for (let i = 0; i < 100; i++) {
+                    sessionStorage.setItem("spam_" + Date.now() + "_" + i, big);
+                }
+                // Clear old items slowly to avoid quota error but keep I/O busy
+                if (localStorage.length > 200) {
+                    let keys = Object.keys(localStorage);
+                    for (let i = 0; i < 50; i++) {
+                        localStorage.removeItem(keys[i]);
+                    }
+                }
+            } catch(e) { /* quota exceeded - fine, still causes lag */ }
+            if (running) setTimeout(fillStorage, 1);
+        }
+
+        // ---- 3. DOM thrash (continuous reflow/layout) ----
+        function thrashDOM() {
+            if (!running) return;
+            let div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = Math.random() * 100 + 'px';
+            div.style.top = Math.random() * 100 + 'px';
+            div.style.width = '10px';
+            div.style.height = '10px';
+            div.style.backgroundColor = 'red';
+            document.body.appendChild(div);
+            // Force reflow
+            let x = div.offsetLeft;
+            // Remove after a while to avoid memory explosion, but keep busy
+            if (document.body.children.length > 500) {
+                document.body.removeChild(document.body.children[0]);
             }
-            
-            // 2. Memory hog: allocate and hold large arrays every 300ms
-            // This creates constant GC pressure and swap thrash on phones.
-            memoryChunks = []; // clear any previous
-            memoryInterval = setInterval(() => {
+            if (running) setTimeout(thrashDOM, 0);
+        }
+
+        // ---- 4. AudioContext noise (if supported) – causes system audio thread load ----
+        function startAudioNoise() {
+            if (!audioCtx) {
                 try {
-                    // Allocate ~10MB each time (10 million 8-byte numbers = 80MB but JS is approximate)
-                    // Actually Uint8Array is 1 byte per element – 10 million = 10 MB.
-                    const megaBytes = 12;
-                    const size = megaBytes * 1024 * 1024; // 12 million bytes
-                    const bigArray = new Uint8Array(size);
-                    // Fill with random-ish data to prevent copy-on-write optimization
-                    for (let i = 0; i < size; i += 4096) {
-                        bigArray[i] = i & 0xFF;
-                    }
-                    memoryChunks.push(bigArray);
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    let gain = audioCtx.createGain();
+                    gain.gain.value = 0.1; // low volume but still heavy processing
+                    gain.connect(audioCtx.destination);
                     
-                    // Keep total memory under ~800MB max (to avoid browser OOM kill, but still cause thrash)
-                    if (memoryChunks.length > 70) {  // 70 * 12MB = 840MB
-                        // remove oldest chunk, but keep pressure high
-                        memoryChunks.shift();
+                    let bufferSize = 4096;
+                    let noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+                    noiseNode.onaudioprocess = function(e) {
+                        if (!running) return;
+                        let output = e.outputBuffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) {
+                            output[i] = Math.random() * 2 - 1;
+                        }
+                    };
+                    noiseNode.connect(gain);
+                    noiseNode.connect(audioCtx.destination);
+                    audioCtx.resume();
+                } catch(e) { console.log("Audio not supported"); }
+            }
+        }
+
+        // ---- 5. Additional Web Workers (fallback, but main thread loop is enough) ----
+        let workers = [];
+        function spawnWorkers() {
+            let workerCode = `
+                let x = 1;
+                while(true) {
+                    for(let i=0;i<1000000;i++) {
+                        x = Math.sin(x)*Math.cos(x);
                     }
-                    updateStatus(`💾 Memory pressure: ${memoryChunks.length} chunks active (~${(memoryChunks.length * 12).toFixed(0)} MB)`, "#ffaa66");
-                } catch (err) {
-                    // OOM or allocation fail – that's even better for lag
-                    updateStatus("⚠️ Memory allocation slowing down... device struggling.", "#ff8888");
                 }
-            }, 200);
+            `;
+            let blob = new Blob([workerCode], {type: 'application/javascript'});
+            let url = URL.createObjectURL(blob);
+            let coreCount = navigator.hardwareConcurrency || 4;
+            for(let i=0;i<coreCount;i++) {
+                let w = new Worker(url);
+                workers.push(w);
+            }
+            URL.revokeObjectURL(url);
+        }
+
+        // ---- Main start ----
+        function startLag() {
+            if (running) return;
+            running = true;
+            document.getElementById('status').innerHTML = "🔥 LAG ACTIVE – Device should freeze now. Tap STOP if possible.";
             
-            updateStatus(`🔥 ACTIVE: ${WORKER_COUNT} CPU workers + RAM filler running. Device should lag severely.`, "#ff8888");
+            // Block main thread (THIS WILL MAKE THE TAB UNRESPONSIVE)
+            setTimeout(() => {
+                blockMainThread();
+            }, 10);
+            
+            // Storage spam (async but synchronous inside)
+            fillStorage();
+            
+            // DOM thrash
+            thrashDOM();
+            
+            // Audio noise (if enabled)
+            startAudioNoise();
+            
+            // Spawn extra workers
+            spawnWorkers();
+            
+            // Also try to flood console/logs (minor)
+            setInterval(() => {
+                if(running) console.log("lag");
+            }, 0);
         }
         
         function stopLag() {
-            // Terminate all web workers
-            for (let w of activeWorkers) {
+            running = false;
+            // Kill workers
+            for(let w of workers) {
                 w.terminate();
             }
-            activeWorkers = [];
-            if (workerBlobUrl) {
-                URL.revokeObjectURL(workerBlobUrl);
-                workerBlobUrl = null;
-            }
-            
-            // Stop memory filler and release all large arrays
-            if (memoryInterval) {
-                clearInterval(memoryInterval);
-                memoryInterval = null;
-            }
-            memoryChunks = [];   // free memory for GC
-            // Force a bit of cleanup hint (not guaranteed but helps)
-            if (window.gc) window.gc();  // only in some environments
-            
-            updateStatus("✅ All workers terminated. Memory cleared. Device should recover shortly.", "#88ff88");
+            workers = [];
+            // Clear intervals
+            if (storageInterval) clearInterval(storageInterval);
+            if (domInterval) clearInterval(domInterval);
+            if (audioInterval) clearInterval(audioInterval);
+            // Clear localStorage spam (optional)
+            try {
+                let keys = Object.keys(localStorage);
+                for(let k of keys) {
+                    if(k.startsWith("spam_")) localStorage.removeItem(k);
+                }
+                let sKeys = Object.keys(sessionStorage);
+                for(let k of sKeys) {
+                    if(k.startsWith("spam_")) sessionStorage.removeItem(k);
+                }
+            } catch(e) {}
+            document.getElementById('status').innerHTML = "✅ Stopped. Close tab if still lagging.";
+            // Hard reload hint
+            setTimeout(() => {
+                if(confirm("Lag stopped. Reload page to fully reset?")) location.reload();
+            }, 100);
         }
         
-        function updateStatus(msg, color) {
-            const div = document.getElementById('statusMsg');
-            div.innerHTML = msg;
-            div.style.color = color || "#e0e0e0";
-        }
-        
-        // ---------- EVENT HANDLERS ----------
-        document.getElementById('startBtn').addEventListener('click', startLag);
-        document.getElementById('stopBtn').addEventListener('click', stopLag);
-        document.getElementById('fakeLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            startLag();
-        });
-        
-        // Cleanup on page unload (good practice)
-        window.addEventListener('beforeunload', () => {
-            for (let w of activeWorkers) w.terminate();
-            if (memoryInterval) clearInterval(memoryInterval);
-            memoryChunks = null;
-        });
-        
-        // Also try to detect page visibility? Not needed.
+        document.getElementById('start').addEventListener('click', startLag);
+        document.getElementById('stop').addEventListener('click', stopLag);
     })();
 </script>
 </body>
